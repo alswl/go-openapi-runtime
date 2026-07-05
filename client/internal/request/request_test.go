@@ -703,6 +703,29 @@ func TestBuildRequest_BuildHTTP_EscapedPath(t *testing.T) {
 	assert.EqualT(t, req.URL.RawPath, req.URL.EscapedPath())
 }
 
+func TestBuildRequest_BuildHTTP_EscapedPathWithUnescape(t *testing.T) {
+	reqWrtr := runtime.ClientRequestWriterFunc(func(req runtime.ClientRequest, _ strfmt.Registry) error {
+		_ = req.SetBodyParam(nil)
+		_ = req.SetQueryParam("hello", "world")
+		_ = req.SetPathParam("id", "foo/bar")
+		_ = req.SetPathParamEscaped("id", false)
+		_ = req.SetHeaderParam("X-Rate-Limit", "200")
+		return nil
+	})
+	r := New(http.MethodPost, "/flats/{id}/", reqWrtr)
+
+	req, cancel, err := r.BuildHTTPContext(t.Context(), runtime.JSONMime, "/basepath", testProducers, nil, nil)
+	t.Cleanup(cancel)
+	require.NoError(t, err)
+	require.NotNil(t, req)
+
+	assert.EqualT(t, "200", req.Header.Get("X-Rate-Limit"))
+	assert.EqualT(t, "world", req.URL.Query().Get("hello"))
+	assert.EqualT(t, "/basepath/flats/foo/bar/", req.URL.Path)
+	// no RawPath because the path was not escaped
+	assert.EqualT(t, "", req.URL.RawPath)
+}
+
 // TestBuildRequest_BuildHTTP_RootPathTrailingSlash locks in the fix for
 // issue #101: the bare-root pattern "/" under a non-empty basePath must
 // keep its trailing slash, and the bare-root cases that the pre-fix

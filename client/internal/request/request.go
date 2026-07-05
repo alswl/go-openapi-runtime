@@ -102,8 +102,9 @@ type Request struct {
 	method      string
 	writer      runtime.ClientRequestWriter
 
-	pathParams map[string]string
-	header     http.Header
+	pathParams        map[string]string
+	pathParamEscaped  map[string]bool
+	header            http.Header
 	query      url.Values
 	formFields url.Values
 	fileFields map[string][]runtime.NamedReadCloser
@@ -219,6 +220,18 @@ func (r *Request) SetPathParam(name string, value string) error {
 
 	r.pathParams[name] = value
 
+	return nil
+}
+
+// SetPathParamEscaped controls whether a path parameter value should be URL-escaped.
+// By default, all path param values are escaped. Call SetPathParamEscaped(name, false)
+// to opt out (e.g. when the value is already escaped or should remain literal).
+func (r *Request) SetPathParamEscaped(name string, escape bool) error {
+	if r.pathParamEscaped == nil {
+		r.pathParamEscaped = make(map[string]bool)
+	}
+
+	r.pathParamEscaped[name] = escape
 	return nil
 }
 
@@ -551,7 +564,11 @@ func (r *Request) resolveURLPath(basePath string) (string, url.Values, error) {
 
 	urlPath := path.Join(basePathURL.Path, pathPatternURL.Path)
 	for k, v := range r.pathParams {
-		urlPath = strings.ReplaceAll(urlPath, "{"+k+"}", url.PathEscape(v))
+		vUsing := url.PathEscape(v)
+		if escape, ok := r.pathParamEscaped[k]; ok && !escape {
+			vUsing = v
+		}
+		urlPath = strings.ReplaceAll(urlPath, "{"+k+"}", vUsing)
 	}
 	if reinstateSlash && !strings.HasSuffix(urlPath, "/") {
 		urlPath += "/"
