@@ -49,6 +49,8 @@ type ClientRequest interface {
 
 	SetPathParam(string, string) error
 
+	SetPathParamEscaped(string, bool) error
+
 	GetQueryParams() url.Values
 
 	SetFileParam(string, ...NamedReadCloser) error
@@ -119,6 +121,10 @@ func (t *TestClientRequest) SetQueryParam(_ string, _ ...string) error { return 
 func (t *TestClientRequest) SetFormParam(_ string, _ ...string) error { return nil }
 
 func (t *TestClientRequest) SetPathParam(_ string, _ string) error { return nil }
+
+func (t *TestClientRequest) SetPathParamEscaped(_ string, _ bool) error {
+	return nil
+}
 
 func (t *TestClientRequest) SetFileParam(_ string, _ ...NamedReadCloser) error { return nil }
 
