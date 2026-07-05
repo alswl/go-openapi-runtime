@@ -155,6 +155,25 @@ upgrade/upstream-* ───────────●────────�
 4. **Upgrade branches handle upstream merges in isolation** — if the merge goes badly, just delete the branch and try again. `master` stays clean.
 5. **Delete merged branches**. Avoid branch clutter. A merged `feat/*` branch has no remaining value — the commits are in `master`.
 
+### Cherry-picking from this fork
+
+Deleted branches don't lose data — the commits live in `master`. Cherry-pick by commit SHA:
+
+```bash
+# Find our patches on master
+git log master --oneline | grep -E "feat:|fix:"
+
+# Cherry-pick a specific patch
+git cherry-pick 2cb321f
+```
+
+Two sources for cherry-picks:
+
+| Source | Where commits live | How to find |
+|--------|--------------------|-------------|
+| Our own features | `master` (merged from `feat/*`) | `git log master --oneline` |
+| Upstream patches | `upstream/master` | `git log upstream/master --oneline` |
+
 ### Example: Adding a new feature
 
 ```bash
